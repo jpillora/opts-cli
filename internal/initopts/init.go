@@ -21,13 +21,12 @@ type initOpts struct {
 	Directory      string `opts:"help=output directory"`
 }
 
-func Register(parent opts.Opts) opts.Opts {
+func Register(parent opts.Opts) {
 	in := initOpts{
 		SrcControlHost: "github.com",
 		Directory:      ".",
 	}
 	parent.AddCommand(opts.New(&in).Name("init"))
-	return parent
 }
 
 func (in *initOpts) Run() error {
@@ -109,7 +108,7 @@ var files = []file{
 
 go 1.12
 
-require github.com/jpillora/opts v1.0.0
+require github.com/jpillora/opts v1.0.1
 `,
 	},
 	{
@@ -136,14 +135,12 @@ type root struct {
 
 func main() {
 	r := root{}
-	ro := opts.New(&r).Name("{{.Name}}").
+	r.parsedOpts = opts.New(&r).Name("{{.Name}}").
 		EmbedGlobalFlagSet().
 		Complete().
-		Version(Version)
-
-	initopts.Register(ro)
-
-	r.parsedOpts = ro.Parse()
+		Version(Version).
+		Call(initopts.Register).
+		Parse()
 	err := r.parsedOpts.Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "run error %v\n", err)
@@ -170,10 +167,9 @@ import (
 type initOpts struct {
 }
 
-func Register(parent opts.Opts) opts.Opts {
+func Register(parent opts.Opts) {
 	in := initOpts{	}
 	parent.AddCommand(opts.New(&in).Name("init"))
-	return parent
 }
 
 func (in *initOpts) Run() error {
