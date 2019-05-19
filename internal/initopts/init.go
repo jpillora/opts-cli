@@ -83,7 +83,7 @@ func (in *initOpts) Run() error {
 		// 	return err
 		// }
 		pa = filepath.Join(pa, path.Base(fi.Path))
-		ofi, err := os.OpenFile(pa, os.O_RDWR|os.O_CREATE, 0755)
+		ofi, err := os.OpenFile(pa, os.O_RDWR|os.O_CREATE, 0664)
 		if err != nil {
 			fmt.Printf("new file error: %v", err)
 			continue
