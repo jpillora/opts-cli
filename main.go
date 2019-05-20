@@ -20,14 +20,12 @@ type root struct {
 
 func main() {
 	r := root{}
-	ro := opts.New(&r).
+	r.parsedOpts = opts.New(&r).
 		EmbedGlobalFlagSet().
 		Complete().
-		Version(Version)
-
-	initopts.Register(ro)
-
-	r.parsedOpts = ro.Parse()
+		Version(Version).
+		Call(initopts.Register).
+		Parse()
 	err := r.parsedOpts.Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "run error %v\n", err)
