@@ -60,3 +60,7 @@ Commit: na
     dev
 
 ```
+
+## CircleCI
+
+GITHUB_TOKEN: When setting up circleci an env-var with the personal access token is needed. https://circleci.com/gh/jplillora/opts-cli/edit#env-vars
