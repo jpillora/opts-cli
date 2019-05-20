@@ -3,7 +3,7 @@
 project_name: opts-cli
 release:
   github:
-    owner: jpillora
+    owner: millergarym
     name: opts-cli
   name_template: '{{.Tag}}'
   # disable: true
