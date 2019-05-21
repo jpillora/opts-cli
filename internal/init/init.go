@@ -1,4 +1,4 @@
-package initopts
+package init
 
 import (
 	"errors"
@@ -21,12 +21,11 @@ type initOpts struct {
 	Directory      string `opts:"help=output directory"`
 }
 
-func Register(parent opts.Opts) {
-	in := initOpts{
+func New() opts.Opts {
+	return opts.New(&initOpts{
 		SrcControlHost: "github.com",
 		Directory:      ".",
-	}
-	parent.AddCommand(opts.New(&in).Name("init"))
+	})
 }
 
 func (in *initOpts) Run() error {
@@ -45,10 +44,6 @@ func (in *initOpts) Run() error {
 			return err
 		}
 	}
-	// if err := f.Close(); err != nil {
-	// 	log.Fatal(err)
-	// }
-
 	data := struct {
 		Module  string
 		Command string
@@ -78,9 +73,6 @@ func (in *initOpts) Run() error {
 		fmt.Printf("#%v\n", fi.Path)
 		pa := filepath.Join(in.Directory, path.Dir(fi.Path))
 		_ = os.MkdirAll(pa, 0755)
-		// if err != nil {
-		// 	return err
-		// }
 		pa = filepath.Join(pa, path.Base(fi.Path))
 		ofi, err := os.OpenFile(pa, os.O_RDWR|os.O_CREATE, 0664)
 		if err != nil {
@@ -124,9 +116,9 @@ import (
 )
 
 var (
-	Version string = "dev"
-	Date    string = "na"
-	Commit  string = "na"
+	version string = "dev"
+	date    string = "na"
+	commit  string = "na"
 )
 
 type root struct {
@@ -138,7 +130,7 @@ func main() {
 	r.parsedOpts = opts.New(&r).Name("{{.Name}}").
 		EmbedGlobalFlagSet().
 		Complete().
-		Version(Version).
+		Version(version).
 		Call(initopts.Register).
 		Parse()
 	err := r.parsedOpts.Run()
@@ -149,7 +141,7 @@ func main() {
 }
 
 func (rt *root) Run() {
-	fmt.Printf("Version: %s\nDate: %s\nCommit: %s\n", Version, Date, Commit)
+	fmt.Printf("version: %s\ndate: %s\ncommit: %s\n", version, date, commit)
 	fmt.Println(rt.parsedOpts.Help())
 }
 `,
@@ -208,7 +200,7 @@ builds:
     goarch: 386
   main: .
   ldflags:
-  - -s -w -X main.Version={{"{{"}}.Version}} -X main.Commit={{"{{"}}.Commit}} -X main.Date={{"{{"}}.Date}}
+  - -s -w -X main.version={{"{{"}}.version}} -X main.commit={{"{{"}}.commit}} -X main.date={{"{{"}}.date}}
 
 archive:
   replacements:
