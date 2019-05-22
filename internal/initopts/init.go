@@ -16,7 +16,7 @@ import (
 
 type initOpts struct {
 	Directory      string `opts:"mode=arg,help=output directory"`
-	Force          bool   `opts:"help=Don't check if output dir is empty"`
+	Force          bool   `opts:"help=Do not check if output dir is empty"`
 	SrcControlHost string `opts:"help=Repo domain or host"`
 	Owner          string `opts:"help=Repo owner. Defaults to $USERNAME"`
 	Name           string `opts:"help=Project name or path. Defaults to current directory"`

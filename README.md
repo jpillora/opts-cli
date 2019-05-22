@@ -13,37 +13,54 @@
 
 A CLI for a library; because creating command-line interfaces should be really simple:
 
-https://github.com/jpillora/opts-cli/releases
+## Install
+Download binary from https://github.com/jpillora/opts-cli/releases
 
-``` sh
-$ ./opts-cli init -h
+or
 
-  Usage: opts-cli init [options] <owner> <name>
+Build from source `go get github.com/jpillora/opts-cli`
+
+`opts-cli init -h`
+<!--tmpl,code=plain:go run main.go init -h -->
+``` plain 
+
+  Usage: opts-cli init [options] <directory>
+
+  output directory
 
   Options:
-  --src-control-host, -s  default github.com
-  --package, -p
-  --command, -c
-  --directory, -d         output directory (default .)
+  --force, -f             Do not check if output dir is empty
+  --src-control-host, -s  Repo domain or host (default github.com)
+  --owner, -o             Repo owner. Defaults to $USERNAME (default garym)
+  --name, -n              Project name or path. Defaults to current directory (default opts-cli)
   --help, -h              display help
-  ```
-  
-  ``` sh
-  $ ./opts-cli init -d my-cli ghuser clis-ftw
-#init {Module:github.com/ghuser/clis-ftw Command:clis-ftw Name:clis-ftw Owner:ghuser}
+
+```
+<!--/tmpl-->
+
+## Using
+
+`opts-cli init --owner jpillora --name opts-golangsyd talk`
+<!--tmpl,code=plain:go run main.go init --owner jpillora --name opts-golangsyd talk -->
+``` plain 
+#init {Module:github.com/jpillora/opts-golangsyd Command:opts-golangsyd Name:opts-golangsyd Owner:jpillora}
 #go.mod
 #main.go
 #internal/initopts/init.go
 #.goreleaser.yml
 #.gitignore
-$ cd my-cli/
-$ go build
-$ ./clis-ftw 
-Version: dev
-Date: na
-Commit: na
+```
+<!--/tmpl-->
 
-  Usage: clis-ftw [options] <command>
+```
+cd talk
+go build
+./opts-golangsyd -h
+```
+<!--tmpl,code=plain:cd talk; go run main.go -h -->
+``` plain 
+
+  Usage: opts-golangsyd [options] <command>
 
   Options:
   --version, -v    display version
@@ -60,6 +77,7 @@ Commit: na
     dev
 
 ```
+<!--/tmpl-->
 
 ## CircleCI
 
