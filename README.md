@@ -81,4 +81,7 @@ go build
 
 ## CircleCI
 
+The CircleCI config with run goreleaser is the commit is tagged.
+
 GITHUB_TOKEN: When setting up circleci an env-var with the personal access token is needed. https://circleci.com/gh/jplillora/opts-cli/edit#env-vars
+
