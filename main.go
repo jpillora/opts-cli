@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/jpillora/opts"
 	"github.com/jpillora/opts-cli/internal/initopts"
 )
@@ -13,21 +11,14 @@ var (
 	Commit  string = "na"
 )
 
-type root struct {
-	ParsedOpts opts.ParsedOpts `opts:"mode=parsedOpts"`
-}
+type root struct{}
 
 func main() {
-	opts.New(&root{}).
-		EmbedGlobalFlagSet().
-		Complete().
-		Version(Version).
-		Call(initopts.Register).
-		Parse().
-		RunFatal()
-}
-
-func (rt *root) Run() {
-	fmt.Printf("Version: %s\nDate: %s\nCommit: %s\n", Version, Date, Commit)
-	fmt.Println(rt.ParsedOpts.Help())
+	// Create and config flag stuffer
+	ro := opts.New(&root{}).Name("{{.Name}}").
+		EmbedGlobalFlagSet().Complete().Version(Version)
+	// Subcommand registration pattern
+	initopts.Register(ro)
+	// Parse command line and run command
+	ro.Parse().RunFatal()
 }

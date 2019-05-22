@@ -5,20 +5,21 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"path"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/jpillora/opts"
 )
 
 type initOpts struct {
-	SrcControlHost string
-	Owner          string `opts:"mode=arg"`
-	Name           string `opts:"mode=arg"`
-	Package        string
-	Command        string
-	Directory      string `opts:"help=output directory"`
+	Directory      string `opts:"mode=arg,help=output directory"`
+	Force          bool   `opts:"help=Don't check if output dir is empty"`
+	SrcControlHost string `opts:"help=Repo domain or host"`
+	Owner          string `opts:"help=Repo owner. Defaults to $USERNAME"`
+	Name           string `opts:"help=Project name or path. Defaults to current directory"`
 }
 
 func Register(parent opts.Opts) {
@@ -26,29 +27,34 @@ func Register(parent opts.Opts) {
 		SrcControlHost: "github.com",
 		Directory:      ".",
 	}
+	if us, err := user.Current(); err == nil {
+		in.Owner = us.Name
+	}
+	if di, err := os.Getwd(); err == nil {
+		in.Name = path.Base(di)
+	}
 	parent.AddCommand(opts.New(&in).Name("init"))
 }
 
 func (in *initOpts) Run() error {
-	dir, err := os.OpenFile(in.Directory, os.O_APPEND, 0755)
-	if err != nil {
-		err = os.MkdirAll(in.Directory, 0755)
+	if !in.Force {
+		dir, err := os.OpenFile(in.Directory, os.O_APPEND, 0755)
 		if err != nil {
-			return err
-		}
-	} else {
-		names, err := dir.Readdirnames(1)
-		if len(names) > 0 {
-			return errors.New("output directory not empty")
-		}
-		if err != io.EOF {
-			return err
+			err = os.MkdirAll(in.Directory, 0755)
+			if err != nil {
+				return err
+			}
+		} else {
+			names, err := dir.Readdirnames(1)
+			if len(names) > 0 {
+				return errors.New("output directory not empty")
+			}
+			if err != io.EOF {
+				return err
+			}
 		}
 	}
-	// if err := f.Close(); err != nil {
-	// 	log.Fatal(err)
-	// }
-
+	cmdN := strings.Split(in.Name, "/")
 	data := struct {
 		Module  string
 		Command string
@@ -56,17 +62,9 @@ func (in *initOpts) Run() error {
 		Owner   string
 	}{
 		Module:  in.SrcControlHost + "/" + in.Owner + "/" + in.Name,
-		Command: in.Name,
+		Command: cmdN[len(cmdN)-1],
 		Name:    in.Name,
 		Owner:   in.Owner,
-	}
-	if in.Package != "" {
-		data.Module = data.Module + "/" + in.Package
-	}
-	if in.Command != "" {
-		data.Command = in.Command
-	} else if in.Package != "" {
-		data.Command = in.Package
 	}
 	fmt.Printf("#init %+v\n", data)
 	for _, fi := range files {
@@ -116,9 +114,6 @@ require github.com/jpillora/opts v1.0.1
 		Tmpl: `package main
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/jpillora/opts"
 	"{{.Module}}/internal/initopts"
 )
@@ -129,28 +124,16 @@ var (
 	Commit  string = "na"
 )
 
-type root struct {
-	parsedOpts opts.ParsedOpts
-}
+type root struct {}
 
 func main() {
-	r := root{}
-	r.parsedOpts = opts.New(&r).Name("{{.Name}}").
-		EmbedGlobalFlagSet().
-		Complete().
-		Version(Version).
-		Call(initopts.Register).
-		Parse()
-	err := r.parsedOpts.Run()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "run error %v\n", err)
-		os.Exit(2)
-	}
-}
-
-func (rt *root) Run() {
-	fmt.Printf("Version: %s\nDate: %s\nCommit: %s\n", Version, Date, Commit)
-	fmt.Println(rt.parsedOpts.Help())
+	// Create and config flag stuffer
+	ro := opts.New(&root{}).Name("{{.Name}}").
+		EmbedGlobalFlagSet().Complete().Version(Version)
+	// Subcommand registration pattern
+	initopts.Register(ro)
+	// Parse command line and run command
+	ro.Parse().RunFatal()
 }
 `,
 	},
