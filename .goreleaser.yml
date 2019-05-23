@@ -24,7 +24,7 @@ builds:
         goarch: 386
     main: .
     ldflags:
-      - -s -w -X main.version={{.version}} -X main.commit={{.commit}} -X main.date={{.date}}
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
 
 archive:
   replacements:
