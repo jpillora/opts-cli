@@ -1,4 +1,4 @@
-package initopts
+package init
 
 import (
 	"errors"
@@ -22,8 +22,8 @@ type initOpts struct {
 	Name           string `opts:"help=Project name or path. Defaults to current directory"`
 }
 
-func Register(parent opts.Opts) {
-	in := initOpts{
+func New() opts.Opts {
+	in := &initOpts{
 		SrcControlHost: "github.com",
 		Directory:      ".",
 	}
@@ -33,7 +33,7 @@ func Register(parent opts.Opts) {
 	if di, err := os.Getwd(); err == nil {
 		in.Name = path.Base(di)
 	}
-	parent.AddCommand(opts.New(&in).Name("init"))
+	return opts.New(in).Name("init")
 }
 
 func (in *initOpts) Run() error {
@@ -76,9 +76,6 @@ func (in *initOpts) Run() error {
 		fmt.Printf("#%v\n", fi.Path)
 		pa := filepath.Join(in.Directory, path.Dir(fi.Path))
 		_ = os.MkdirAll(pa, 0755)
-		// if err != nil {
-		// 	return err
-		// }
 		pa = filepath.Join(pa, path.Base(fi.Path))
 		ofi, err := os.OpenFile(pa, os.O_RDWR|os.O_CREATE, 0664)
 		if err != nil {
@@ -114,26 +111,36 @@ require github.com/jpillora/opts v1.0.1
 		Tmpl: `package main
 
 import (
+	"fmt"
+
 	"github.com/jpillora/opts"
 	"{{.Module}}/internal/initopts"
 )
 
 var (
-	Version string = "dev"
-	Date    string = "na"
-	Commit  string = "na"
+	version string = "dev"
+	date    string = "na"
+	commit  string = "na"
 )
 
-type root struct {}
+type root struct {
+	help string
+}
 
 func main() {
-	// Create and config flag stuffer
-	ro := opts.New(&root{}).Name("{{.Name}}").
-		EmbedGlobalFlagSet().Complete().Version(Version)
-	// Subcommand registration pattern
-	initopts.Register(ro)
-	// Parse command line and run command
-	ro.Parse().RunFatal()
+	opts.New(&root{}).
+		Name("{{.Name}}").
+		EmbedGlobalFlagSet().
+		Complete().
+		Version(version).
+		AddCommand(initopts.New()).
+		Parse().
+		RunFatal()
+}
+
+func (r *root) Run() {
+	fmt.Printf("version: %s\ndate: %s\ncommit: %s\n", version, date, commit)
+	fmt.Println(r.help)
 }
 `,
 	},
@@ -150,9 +157,9 @@ import (
 type initOpts struct {
 }
 
-func Register(parent opts.Opts) {
+func New() opts.Opts {
 	in := initOpts{	}
-	parent.AddCommand(opts.New(&in).Name("init"))
+	return opts.New(&in).Name("init")
 }
 
 func (in *initOpts) Run() error {
@@ -191,7 +198,7 @@ builds:
     goarch: 386
   main: .
   ldflags:
-  - -s -w -X main.Version={{"{{"}}.Version}} -X main.Commit={{"{{"}}.Commit}} -X main.Date={{"{{"}}.Date}}
+  - -s -w -X main.version={{"{{"}}.Version}} -X main.commit={{"{{"}}.Commit}} -X main.date={{"{{"}}.Date}}
 
 archive:
   replacements:

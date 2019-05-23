@@ -5,27 +5,26 @@ release:
   github:
     owner: jpillora
     name: opts-cli
-  name_template: '{{.Tag}}'
+  name_template: "{{.Tag}}"
   # disable: true
 
 builds:
-- 
-  binary: opts-cli
-  env:
-  - CGO_ENABLED=0
-  goos:
-  - linux
-  - darwin
-  - windows
-  goarch:
-  - amd64
-  - "386"
-  ignore:
-  - goos: darwin
-    goarch: 386
-  main: .
-  ldflags:
-  - -s -w -X main.Version={{.Version}} -X main.Commit={{.Commit}} -X main.Date={{.Date}}
+  - binary: opts-cli
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - "386"
+    ignore:
+      - goos: darwin
+        goarch: 386
+    main: .
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
 
 archive:
   replacements:
@@ -33,20 +32,20 @@ archive:
     amd64: x86_64
   format: binary
   format_overrides:
-  - goos: windows
-    format: zip
+    - goos: windows
+      format: zip
   files:
-  - licence*
-  - LICENCE*
-  - license*
-  - LICENSE*
-  - readme*
-  - README*
-  - changelog*
-  - CHANGELOG*
+    - licence*
+    - LICENCE*
+    - license*
+    - LICENSE*
+    - readme*
+    - README*
+    - changelog*
+    - CHANGELOG*
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 
 snapshot:
   name_template: "{{ .Tag }}-next"
@@ -55,5 +54,5 @@ changelog:
   sort: asc
   filters:
     exclude:
-    - '^docs:'
-    - '^test:'
+      - "^docs:"
+      - "^test:"

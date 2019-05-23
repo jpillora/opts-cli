@@ -1,26 +1,40 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/jpillora/opts"
-	"github.com/jpillora/opts-cli/internal/genmd"
-	"github.com/jpillora/opts-cli/internal/initopts"
+	initPkg "github.com/jpillora/opts-cli/internal/init"
 )
 
 var (
-	Version string = "dev"
-	Date    string = "na"
-	Commit  string = "na"
+	version = "dev"
+	date    = "na"
+	commit  = "na"
 )
 
-type root struct{}
+type root struct {
+	help string
+}
 
 func main() {
-	// Create and config flag stuffer
-	ro := opts.New(&root{}).Name("opts-cli").
-		EmbedGlobalFlagSet().Complete().Version(Version)
-	// Subcommand registration pattern
-	initopts.Register(ro)
-	genmd.Register(ro)
-	// Parse command line and run command
-	ro.Parse().RunFatal()
+	r := root{}
+	o := opts.New(&r).
+		EmbedGlobalFlagSet().
+		Complete().
+		Version(version).
+		AddCommand(initPkg.New()).
+		Parse()
+	r.help = o.Help()
+	err := o.Run()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "run error %v\n", err)
+		os.Exit(2)
+	}
+}
+
+func (r *root) Run() {
+	fmt.Printf("version: %s\ndate: %s\ncommit: %s\n", version, date, commit)
+	fmt.Println(r.help)
 }
