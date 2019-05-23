@@ -1,54 +1,60 @@
-package initopts
+package init
 
 import (
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"path"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/jpillora/opts"
 )
 
 type initOpts struct {
-	SrcControlHost string
-	Owner          string `opts:"mode=arg"`
-	Name           string `opts:"mode=arg"`
-	Package        string
-	Command        string
-	Directory      string `opts:"help=output directory"`
+	Directory      string `opts:"mode=arg,help=output directory"`
+	Force          bool   `opts:"help=Do not check if output dir is empty"`
+	SrcControlHost string `opts:"help=Repo domain or host"`
+	Owner          string `opts:"help=Repo owner. Defaults to $USERNAME"`
+	Name           string `opts:"help=Project name or path. Defaults to current directory"`
 }
 
-func Register(parent opts.Opts) {
-	in := initOpts{
+func New() opts.Opts {
+	in := &initOpts{
 		SrcControlHost: "github.com",
 		Directory:      ".",
 	}
-	parent.AddCommand(opts.New(&in).Name("init"))
+	if us, err := user.Current(); err == nil {
+		in.Owner = us.Name
+	}
+	if di, err := os.Getwd(); err == nil {
+		in.Name = path.Base(di)
+	}
+	return opts.New(in).Name("init")
 }
 
 func (in *initOpts) Run() error {
-	dir, err := os.OpenFile(in.Directory, os.O_APPEND, 0755)
-	if err != nil {
-		err = os.MkdirAll(in.Directory, 0755)
+	if !in.Force {
+		dir, err := os.OpenFile(in.Directory, os.O_APPEND, 0755)
 		if err != nil {
-			return err
-		}
-	} else {
-		names, err := dir.Readdirnames(1)
-		if len(names) > 0 {
-			return errors.New("output directory not empty")
-		}
-		if err != io.EOF {
-			return err
+			err = os.MkdirAll(in.Directory, 0755)
+			if err != nil {
+				return err
+			}
+		} else {
+			names, err := dir.Readdirnames(1)
+			if len(names) > 0 {
+				return errors.New("output directory not empty")
+			}
+			if err != io.EOF {
+				return err
+			}
 		}
 	}
-	// if err := f.Close(); err != nil {
-	// 	log.Fatal(err)
-	// }
-
+	cmdN := strings.Split(in.Name, "/")
 	data := struct {
 		Module  string
 		Command string
@@ -56,17 +62,9 @@ func (in *initOpts) Run() error {
 		Owner   string
 	}{
 		Module:  in.SrcControlHost + "/" + in.Owner + "/" + in.Name,
-		Command: in.Name,
+		Command: cmdN[len(cmdN)-1],
 		Name:    in.Name,
 		Owner:   in.Owner,
-	}
-	if in.Package != "" {
-		data.Module = data.Module + "/" + in.Package
-	}
-	if in.Command != "" {
-		data.Command = in.Command
-	} else if in.Package != "" {
-		data.Command = in.Package
 	}
 	fmt.Printf("#init %+v\n", data)
 	for _, fi := range files {
@@ -78,9 +76,6 @@ func (in *initOpts) Run() error {
 		fmt.Printf("#%v\n", fi.Path)
 		pa := filepath.Join(in.Directory, path.Dir(fi.Path))
 		_ = os.MkdirAll(pa, 0755)
-		// if err != nil {
-		// 	return err
-		// }
 		pa = filepath.Join(pa, path.Base(fi.Path))
 		ofi, err := os.OpenFile(pa, os.O_RDWR|os.O_CREATE, 0664)
 		if err != nil {
@@ -117,40 +112,35 @@ require github.com/jpillora/opts v1.0.1
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/jpillora/opts"
 	"{{.Module}}/internal/initopts"
 )
 
 var (
-	Version string = "dev"
-	Date    string = "na"
-	Commit  string = "na"
+	version string = "dev"
+	date    string = "na"
+	commit  string = "na"
 )
 
 type root struct {
-	parsedOpts opts.ParsedOpts
+	help string
 }
 
 func main() {
-	r := root{}
-	r.parsedOpts = opts.New(&r).Name("{{.Name}}").
+	opts.New(&root{}).
+		Name("{{.Name}}").
 		EmbedGlobalFlagSet().
 		Complete().
-		Version(Version).
-		Call(initopts.Register).
-		Parse()
-	err := r.parsedOpts.Run()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "run error %v\n", err)
-		os.Exit(2)
-	}
+		Version(version).
+		AddCommand(initopts.New()).
+		Parse().
+		RunFatal()
 }
 
-func (rt *root) Run() {
-	fmt.Printf("Version: %s\nDate: %s\nCommit: %s\n", Version, Date, Commit)
-	fmt.Println(rt.parsedOpts.Help())
+func (r *root) Run() {
+	fmt.Printf("version: %s\ndate: %s\ncommit: %s\n", version, date, commit)
+	fmt.Println(r.help)
 }
 `,
 	},
@@ -167,9 +157,9 @@ import (
 type initOpts struct {
 }
 
-func Register(parent opts.Opts) {
+func New() opts.Opts {
 	in := initOpts{	}
-	parent.AddCommand(opts.New(&in).Name("init"))
+	return opts.New(&in).Name("init")
 }
 
 func (in *initOpts) Run() error {
@@ -208,7 +198,7 @@ builds:
     goarch: 386
   main: .
   ldflags:
-  - -s -w -X main.Version={{"{{"}}.Version}} -X main.Commit={{"{{"}}.Commit}} -X main.Date={{"{{"}}.Date}}
+  - -s -w -X main.version={{"{{"}}.Version}} -X main.commit={{"{{"}}.Commit}} -X main.date={{"{{"}}.Date}}
 
 archive:
   replacements:
